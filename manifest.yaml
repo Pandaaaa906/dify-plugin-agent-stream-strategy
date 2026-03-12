@@ -3,15 +3,15 @@ type: plugin
 author: pandaaaa906
 name: stream-strategy
 label:
-  en_US: stream-strategy
-  ja_JP: stream-strategy
-  zh_Hans: stream-strategy
-  pt_BR: stream-strategy
+  en_US: Streaming Agent Strategy(MCP tools Supports)
+  ja_JP: Streaming Agent Strategy(MCP tools Supports)
+  zh_Hans: Streaming Agent Strategy(支持MCP工具)
+  pt_BR: Streaming Agent Strategy(MCP tools Supports)
 description:
-  en_US: Dify agent streaming strategy
-  ja_JP: Dify agent streaming strategy
-  zh_Hans: Dify agent streaming strategy
-  pt_BR: Dify agent streaming strategy
+  en_US: Dify agent streaming strategy with MCP tools Supports
+  ja_JP: Dify agent streaming strategy with MCP tools Supports
+  zh_Hans: Dify agent streaming strategy with MCP tools Supports
+  pt_BR: Dify agent streaming strategy with MCP tools Supports
 icon: icon.svg
 icon_dark: icon-dark.svg
 resource:
@@ -34,7 +34,7 @@ plugins:
   agent_strategies:
     - provider/agent.yaml
 meta:
-  version: 0.0.1
+  version: 0.0.2
   arch:
     - amd64
     - arm64

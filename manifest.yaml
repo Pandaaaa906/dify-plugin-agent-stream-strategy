@@ -5,7 +5,7 @@ name: stream-strategy
 label:
   en_US: Streaming Agent Strategy(MCP tools Supports)
   ja_JP: Streaming Agent Strategy(MCP tools Supports)
-  zh_Hans: Streaming Agent Strategy(支持MCP工具)
+  zh_Hans: Agent流式输出策略(支持MCP工具)
   pt_BR: Streaming Agent Strategy(MCP tools Supports)
 description:
   en_US: Dify agent streaming strategy with MCP tools Supports

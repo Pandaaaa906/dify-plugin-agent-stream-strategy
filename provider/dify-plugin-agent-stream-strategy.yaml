@@ -1,0 +1,17 @@
+identity:
+  author: pandaaaa906
+  name: dify-plugin-agent-stream-strategy
+  label:
+    en_US: "DifyPluginAgentStreamStrategy"
+    zh_Hans: "DifyPluginAgentStreamStrategy"
+    ja_JP: "DifyPluginAgentStreamStrategy"
+  description:
+    en_US: "DifyPluginAgentStreamStrategy"
+    zh_Hans: "DifyPluginAgentStreamStrategy"
+    ja_JP: "DifyPluginAgentStreamStrategy"
+  icon: icon.svg
+strategies:
+  - strategies/dify-plugin-agent-stream-strategy.yaml
+extra:
+  python:
+    source: provider/dify-plugin-agent-stream-strategy.py

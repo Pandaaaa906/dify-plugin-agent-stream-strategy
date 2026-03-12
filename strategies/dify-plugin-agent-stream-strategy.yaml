@@ -1,0 +1,32 @@
+identity:
+  name: dify-plugin-agent-stream-strategy
+  author: pandaaaa906
+  label:
+    en_US: "DifyPluginAgentStreamStrategy"
+    zh_Hans: "DifyPluginAgentStreamStrategy"
+    ja_JP: "DifyPluginAgentStreamStrategy"
+description:
+  en_US: "DifyPluginAgentStreamStrategy"
+  zh_Hans: "DifyPluginAgentStreamStrategy"
+  ja_JP: "DifyPluginAgentStreamStrategy"
+parameters:
+  - name: model
+    type: model-selector
+    scope: tool-call&llm
+    required: true
+    label:
+      en_US: Model
+      zh_Hans: 模型
+      pt_BR: Model
+      ja_JP: モデル
+  - name: tools
+    type: array[tools]
+    required: true
+    label:
+      en_US: Tools list
+      zh_Hans: 工具列表
+      pt_BR: Tools list
+      ja_JP: ツールリスト
+extra:
+  python:
+    source: strategies/dify-plugin-agent-stream-strategy.py

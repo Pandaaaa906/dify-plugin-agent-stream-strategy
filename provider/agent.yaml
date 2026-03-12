@@ -1,0 +1,15 @@
+identity:
+  author: pandaaaa906
+  name: stream-strategy
+  label:
+    en_US: "Streaming React Strategy"
+    zh_Hans: "Streaming React Strategy"
+  description:
+    en_US: "Streaming React Strategy"
+    zh_Hans: "Streaming React Strategy"
+  icon: icon.svg
+strategies:
+  - strategies/streaming_react.yaml
+extra:
+  python:
+    source: provider/agent.py

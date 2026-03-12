@@ -1,12 +1,12 @@
 version: 0.0.1
 type: plugin
 author: pandaaaa906
-name: dify-plugin-agent-stream-strategy
+name: stream-strategy
 label:
-  en_US: dify-plugin-agent-stream-strategy
-  ja_JP: dify-plugin-agent-stream-strategy
-  zh_Hans: dify-plugin-agent-stream-strategy
-  pt_BR: dify-plugin-agent-stream-strategy
+  en_US: stream-strategy
+  ja_JP: stream-strategy
+  zh_Hans: stream-strategy
+  pt_BR: stream-strategy
 description:
   en_US: Dify agent streaming strategy
   ja_JP: Dify agent streaming strategy
@@ -32,7 +32,7 @@ resource:
       size: 1048576
 plugins:
   agent_strategies:
-    - provider/dify-plugin-agent-stream-strategy.yaml
+    - provider/agent.yaml
 meta:
   version: 0.0.1
   arch:

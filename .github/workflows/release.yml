@@ -1,0 +1,59 @@
+name: Release on Tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download dify-plugin CLI
+        run: |
+          mkdir -p $RUNNER_TEMP/bin
+          cd $RUNNER_TEMP/bin
+          wget -q https://github.com/langgenius/dify-plugin-daemon/releases/download/0.5.3/dify-plugin-linux-amd64
+          chmod +x dify-plugin-linux-amd64
+          echo "$RUNNER_TEMP/bin" >> $GITHUB_PATH
+
+      - name: Get version info
+        id: info
+        run: |
+          VERSION=$(grep "^version:" manifest.yaml | cut -d' ' -f2)
+          NAME=$(grep "^name:" manifest.yaml | cut -d' ' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "name=$NAME" >> $GITHUB_OUTPUT
+          echo "Package: $NAME v$VERSION"
+
+      - name: Package plugin
+        run: |
+          mkdir -p outs
+          dify-plugin-linux-amd64 plugin package . -o "outs/${{ steps.info.outputs.name }}.difypkg"
+          ls -la outs/
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          VERSION="${{ steps.info.outputs.version }}"
+          PACKAGE="outs/${{ steps.info.outputs.name }}.difypkg"
+
+          # Check if release already exists
+          if gh release view "$TAG_NAME" 2>/dev/null; then
+            echo "Release $TAG_NAME already exists, uploading asset..."
+            gh release upload "$TAG_NAME" "$PACKAGE" --clobber
+          else
+            echo "Creating new release $TAG_NAME..."
+            gh release create "$TAG_NAME" \
+              --title "v$VERSION" \
+              --generate-notes \
+              "$PACKAGE"
+          fi

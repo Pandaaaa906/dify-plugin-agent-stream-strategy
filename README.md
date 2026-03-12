@@ -15,6 +15,7 @@
 
 ![plugin-detail.png](docs/plugin-detail.png)
 ![agent-node-select-strategy.png](docs/agent-node-select.png)
+![streaming output](docs/streaming-output.gif)
 
 Custom MCP Servers config, support multiple MCP services. The following example:
 

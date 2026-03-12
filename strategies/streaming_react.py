@@ -224,11 +224,12 @@ class StreamingReactAgentStrategy(
                 elif isinstance(parsed, TextDelta):
                     if pending_tool_calls and not current_thinking:
                         current_thinking = parsed.full
-                    if not text_started:
-                        text_started = True
-                        final_answer_delivered = True
-                    # Stream text to user immediately
-                    yield self.create_text_message(parsed.text)
+                    if not pending_tool_calls:
+                        if not text_started:
+                            text_started = True
+                            final_answer_delivered = True
+                        # Stream text to user immediately
+                        yield self.create_text_message(parsed.text)
 
                 elif isinstance(parsed, StopReason):
                     # Stop reason detected

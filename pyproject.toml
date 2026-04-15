@@ -1,0 +1,12 @@
+[project]
+name = "dify-plugin-agent-stream-strategy"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "dify-plugin==0.7.1",
+    "httpx-sse~=0.4.0",
+    "json-repair==0.58.5",
+    "orjson~=3.11.4",
+]

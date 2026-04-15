@@ -193,3 +193,5 @@ tests/
 
 # doc
 docs/
+
+.venv/

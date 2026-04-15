@@ -29,7 +29,7 @@ resource:
       moderation: false
     storage:
       enabled: true
-      size: 1048576
+      size: 1073741824
 plugins:
   agent_strategies:
     - provider/agent.yaml

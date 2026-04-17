@@ -24,18 +24,21 @@ class ToolResultContent(TypedDict):
 class AssistantScratchpadEntry(TypedDict):
     """Assistant's tool use decision."""
     role: str  # "assistant"
+    invoke_id: float
     content: list[ToolUseContent]
 
 
 class ToolScratchpadEntry(TypedDict):
     """Tool execution results."""
     role: str  # "tool"
+    invoke_id: float
     content: list[ToolResultContent]
 
 
 class AssistantThoughtScratchpadEntry(TypedDict):
     """Assistant's thinking content."""
     role: str  # "assistant_thought"
+    invoke_id: float
     content: str
 
 

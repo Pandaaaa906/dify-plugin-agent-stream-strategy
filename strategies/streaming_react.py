@@ -146,6 +146,8 @@ class StreamingReactAgentStrategy(
         prompt_messages_tools = self._init_prompt_tools(tools)
         prompt_messages_tools.extend(self._init_prompt_mcp_tools(mcp_tools))
 
+        invoke_id = int(time.time() * 1000)
+
         # Main agent loop
         while run_agent_state and iteration_step <= max_iterations:
             run_agent_state = False
@@ -168,8 +170,9 @@ class StreamingReactAgentStrategy(
                 query=query,
                 instruction=instruction,
                 tools=prompt_messages_tools,
-                scratchpad=self.agent_scratchpad,
+                scratchpads=self.agent_scratchpad,
                 model=model,
+                invoke_id=invoke_id,
             )
 
             # Calculate max tokens
@@ -280,6 +283,7 @@ class StreamingReactAgentStrategy(
                 # Add to scratchpad for next iteration
                 self.append_agent_scratchpad({
                     "role": "assistant",
+                    "invoke_id": invoke_id,
                     "content": [
                         {"type": "tool_use", "id": tc.id, "name": tc.name, "input": tc.input}
                         for tc in pending_tool_calls
@@ -287,11 +291,13 @@ class StreamingReactAgentStrategy(
                 })
                 self.append_agent_scratchpad({
                     "role": "tool",
+                    "invoke_id": invoke_id,
                     "content": tool_results
                 })
             elif current_thinking:
                 self.append_agent_scratchpad({
                     "role": "assistant_thought",
+                    "invoke_id": invoke_id,
                     "content": current_thinking,
                 })
 
@@ -302,12 +308,14 @@ class StreamingReactAgentStrategy(
             else:
                 run_agent_state = True
 
+            _, observation = self._format_scratchpads(self.agent_scratchpad, invoke_id=invoke_id)
+
             yield self.finish_log_message(
                 log=round_log,
                 data={
                     "stop_reason": stop_reason,
                     "thought": current_thinking,
-                    "observation": self._format_scratchpad(self.agent_scratchpad),
+                    "observation": observation,
                 },
                 metadata={
                     LogMetadata.STARTED_AT: round_started_at,
@@ -347,8 +355,9 @@ class StreamingReactAgentStrategy(
         query: str,
         instruction: str,
         tools: list[Any],
-        scratchpad: Tuple[ScratchpadEntry],
+        scratchpads: Tuple[ScratchpadEntry],
         model: AgentModelConfig,
+        invoke_id: float,
     ) -> list[PromptMessage]:
         """Organize prompt messages for the model."""
 
@@ -373,52 +382,76 @@ class StreamingReactAgentStrategy(
             orjson.dumps(tool_descriptions).decode('utf-8') if tool_descriptions else "No tools available."
         )
 
+        scratchpad_template = STREAMING_CONTENT_PROMPT_TEMPLATES["english"]["chat"]["agent_scratchpad"]
         # Format scratchpad as string
-        scratchpad_str = self._format_scratchpad(scratchpad)
-        if not scratchpad_str:
-            assistant_messages = []
+        history_scratchpad_str, current_scratchpad_str = self._format_scratchpads(scratchpads, invoke_id=invoke_id)
+        if not history_scratchpad_str:
+            history_assistant_messages = []
         else:
-            scratchpad_template = STREAMING_CONTENT_PROMPT_TEMPLATES["english"]["chat"]["agent_scratchpad"]
-            assistant_message = AssistantPromptMessage(content=scratchpad_template.replace("{{tool_results}}", scratchpad_str))
-            assistant_messages = [assistant_message]
+            assistant_message = AssistantPromptMessage(content=scratchpad_template.replace("{{tool_results}}", history_scratchpad_str))
+            history_assistant_messages = [assistant_message]
+
+        if not current_scratchpad_str:
+            current_scratchpad_messages = []
+        else:
+            assistant_message = AssistantPromptMessage(content=scratchpad_template.replace("{{tool_results}}", current_scratchpad_str))
+            current_scratchpad_messages = [assistant_message]
+
+        logger.info(f"{history_assistant_messages=}")
+        logger.info(f"{current_scratchpad_messages=}")
 
         history_messages = self._iter_cleanup_history_prompt_messages(model)
 
         messages: list[PromptMessage] = [
             SystemPromptMessage(content=system_prompt),
             *history_messages,
+            *history_assistant_messages,
             UserPromptMessage(content=query),
-            *assistant_messages,
+            *current_scratchpad_messages,
         ]
 
         return messages
 
     @staticmethod
-    def _format_scratchpad(scratchpad: Tuple[ScratchpadEntry]) -> str:
+    def _format_scratchpad(scratchpad: ScratchpadEntry) -> str:
+        role = scratchpad.get("role", "")
+        content = scratchpad.get("content", [])
+        if role == "assistant_thought":
+            return f"Assistant Thoughts: {content}"
+        elif role == "assistant":
+            return (
+                f"Assistant decided to use tools: \n"
+                f"{'\n'.join((
+                    f'  - {block.get('name')} (id: {block.get('id')})'
+                    for block in content if block.get('type') == 'tool_use'
+                ))}")
+        elif role == "tool":
+            return (
+                f"Tool execution results: \n"
+                f"{'\n'.join((
+                    f'  - {block.get('tool_use_id')}: {block.get('content', '')}'
+                    for block in content if block.get('type') == 'tool_result'
+                ))}")
+        return ''
+
+    @classmethod
+    def _format_scratchpads(cls, scratchpads: Tuple[ScratchpadEntry], invoke_id: float) -> Tuple[str, str]:
         """Format scratchpad entries as a string."""
-        if not scratchpad:
-            return ""
+        if not scratchpads:
+            return "", ""
 
-        parts = []
-        for entry in scratchpad:
-            role = entry.get("role", "")
-            content = entry.get("content", [])
-
-            if role == "assistant_thought":
-                parts.append(f"Assistant Thoughts: {content}")
-            elif role == "assistant":
-                parts.append("Assistant decided to use tools:")
-                for block in content:
-                    if block.get("type") == "tool_use":
-                        parts.append(f"  - {block.get('name')} (id: {block.get('id')})")
-
-            elif role == "tool":
-                parts.append("Tool execution results:")
-                for block in content:
-                    if block.get("type") == "tool_result":
-                        parts.append(f"  - {block.get('tool_use_id')}: {block.get('content', '')}")
-
-        return "\n\n\n".join(parts)
+        old_parts = []
+        cur_parts = []
+        for scratchpad in scratchpads:
+            msg_invoke_id = scratchpad.get("invoke_id", None) or 0
+            logger.info(f"### {msg_invoke_id=}, {invoke_id=}")
+            if msg_invoke_id < invoke_id:
+                old_parts.append(cls._format_scratchpad(scratchpad))
+            else:
+                cur_parts.append(cls._format_scratchpad(scratchpad))
+        logger.info(f"*** {old_parts=}")
+        logger.info(f"*** {cur_parts=}")
+        return "\n\n".join(old_parts), "\n\n".join(cur_parts)
 
     def _execute_single_tool(
         self,

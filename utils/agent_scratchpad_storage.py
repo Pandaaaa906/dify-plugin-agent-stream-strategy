@@ -142,7 +142,7 @@ class AgentScratchpadStorageMixin:
             *(self.agent_scratchpad or ()),
             item
         ))
-        self._set_agent_scratchpad(scratchpad)
+        self.agent_scratchpad = scratchpad
 
     def _set_agent_scratchpad(self, scratchpad: Tuple[dict[str, Any]]):
         """Persist scratchpad to storage.

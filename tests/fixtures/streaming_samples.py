@@ -145,4 +145,17 @@ SAMPLES = [
 }""",
         "expected": {"thinking": 2, "tool_use": 2, "text_deltas": "multiple", "stop_reason": "end_turn"}
     },
+
+    {
+        "name": "complex_multi_block",
+        "llm_response": """<think>wht i should do</think>{
+  "content": [
+    {"type": "thinking", "thinking": "First, let me check the weather."},
+    {"type": "tool_use", "id": "tool_2", "name": "get_traffic", "input": {"city": "Beijing"}},
+    {"type": "text", "text": "The weather is good but traffic is heavy."}
+  ],
+  "stop_reason": "end_turn"
+}""",
+        "expected": {"thinking": 2, "tool_use": 2, "text_deltas": "multiple", "stop_reason": "end_turn"}
+    },
 ]

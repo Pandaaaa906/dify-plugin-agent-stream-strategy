@@ -59,6 +59,13 @@ class TextDelta:
     full: str
 
 
+def _index(output: str, substr: str) -> int:
+    try:
+        return output.index(substr)
+    except ValueError:
+        return -1
+
+
 class StreamingContentParser:
     """
     Parser for streaming content blocks in Claude API style format.
@@ -95,10 +102,18 @@ class StreamingContentParser:
         self._skip_count: int = 0
         self._max_skip_count: int = 10
 
+        self.has_think_block: bool | None = None
+        self.in_think_block: bool | None = None
+        self.content_start_idx: int = 0
+
     def _generate_tool_id(self) -> str:
         """Generate an auto-incrementing tool ID when model doesn't provide one."""
         self._auto_tool_id_counter += 1
         return f"tool_{self._auto_tool_id_counter}"
+
+    @property
+    def trim_buffer(self):
+        return self.buffer[self.content_start_idx:]
 
     def feed(self, text_chunk: str) -> Generator[Union[ThinkingBlock, ToolUseBlock, TextDelta, StopReason, None], None, None]:
         """
@@ -116,6 +131,19 @@ class StreamingContentParser:
         """
         self.buffer += text_chunk
 
+        if self.has_think_block is None and self.buffer.startswith("<think>"):
+            self.has_think_block = True
+            self.in_think_block = True
+
+        if self.in_think_block and (think_end_idx := _index(self.buffer, "</think>")) > 0:
+            self.in_think_block = False
+            self.content_start_idx = think_end_idx + 8
+            yield ThinkingBlock(self.buffer[8:think_end_idx])
+            return
+
+        if self.in_think_block:
+            return
+
         # skip if not in stream bloc until exceed _max_skip_count
         if (
                 not self.stop_reason
@@ -130,7 +158,7 @@ class StreamingContentParser:
         # Attempt to parse with json_repair for stable results
         try:
             result = json_repair.loads(
-                self.buffer,
+                self.trim_buffer,
                 stream_stable=True,
                 skip_json_loads=True,
             )
@@ -268,7 +296,7 @@ class StreamingContentParser:
             if not isinstance(content, str):
                 continue
 
-            for block in  self.feed(content):
+            for block in self.feed(content):
                 if block is None:
                     continue
                 yield block
